@@ -33,11 +33,11 @@ let predatorMoveInterval = 800;
 let lastPredatorMoveTime = 0;
 
 document.addEventListener('keydown', (event) => {
-    if (!gameStarted) return;
-    if (event.key === 'ArrowUp') snakeDirection = { up: true, down: false, left: false, right: false };
-    if (event.key === 'ArrowDown') snakeDirection = { up: false, down: true, left: false, right: false };
-    if (event.key === 'ArrowLeft') snakeDirection = { up: false, down: false, left: true, right: false };
-    if (event.key === 'ArrowRight') snakeDirection = { up: false, down: false, left: false, right: true };
+    if (!gameStarted || gameOver) return;
+    if (event.key === 'ArrowUp' && !snakeDirection.down) snakeDirection = { up: true, down: false, left: false, right: false };
+    if (event.key === 'ArrowDown' && !snakeDirection.up) snakeDirection = { up: false, down: true, left: false, right: false };
+    if (event.key === 'ArrowLeft' && !snakeDirection.right) snakeDirection = { up: false, down: false, left: true, right: false };
+    if (event.key === 'ArrowRight' && !snakeDirection.left) snakeDirection = { up: false, down: false, left: false, right: true };
 });
 
 function showInstructions() {
@@ -69,11 +69,12 @@ function startGame() {
 }
 
 function generateEggs() {
-    const buffer = 80; // Move eggs inward from the edges
+    // Repositioning the eggs to further parts of the canvas
+    const buffer = 120; // Move eggs inward from the edges
     eggs = [
         { x: buffer, y: buffer },
         { x: canvas.width - buffer - tileSize, y: buffer },
-        { x: canvas.width - buffer - tileSize, y: canvas.height - buffer - tileSize }
+        { x: buffer, y: canvas.height - buffer - tileSize }
     ];
 }
 
