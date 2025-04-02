@@ -137,6 +137,7 @@ function showInstructions() {
 }
 
 function startGame() {
+    if (gameStarted) return; // Prevent duplicate starts
     gameStarted = true;
     generateEggs();
     gameLoop();
