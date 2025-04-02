@@ -17,15 +17,19 @@ images.nestFull.src = 'nest_full.png';
 images.predator.src = 'predator.png';
 images.jungle.src = 'jungle.png';
 
-const tileSize = 20;
+const tileSize = 50; // Balanced sprite size
 let snake = [{ x: 100, y: 100 }];
 let predator = { x: 400, y: 300 };
-let snakeDirection = 'RIGHT';
+let snakeDirection = null; // FIXED: No automatic movement
 let eggs = [];
 let nest = { x: canvas.width / 2 - tileSize, y: canvas.height / 2 - tileSize };
 let score = 0;
 let gameStarted = false;
 let nestFull = false;
+let moveInterval = 250; // Balanced movement speed
+let lastMoveTime = 0;
+let predatorMoveInterval = 450;
+let lastPredatorMoveTime = 0;
 
 document.addEventListener('keydown', (event) => {
     if (!gameStarted) return;
@@ -57,7 +61,9 @@ function startGame() {
     snake = [{ x: 100, y: 100 }];
     predator = { x: 400, y: 300 };
     score = 0;
+    snakeDirection = null; // FIX: No auto movement
     generateEggs();
+    lastMoveTime = performance.now();
     gameLoop();
 }
 
@@ -88,6 +94,12 @@ function drawGame() {
 }
 
 function moveSnake() {
+    let now = performance.now();
+    if (now - lastMoveTime < moveInterval) return;
+    lastMoveTime = now;
+
+    if (!snakeDirection) return; // FIX: No movement until key pressed
+
     let head = { ...snake[0] };
 
     if (snakeDirection === 'UP') head.y -= tileSize;
@@ -121,6 +133,10 @@ function moveSnake() {
 }
 
 function movePredator() {
+    let now = performance.now();
+    if (now - lastPredatorMoveTime < predatorMoveInterval) return;
+    lastPredatorMoveTime = now;
+
     if (eggs.length === 0) return;
 
     let nearestEgg = eggs.reduce((closest, egg) => {
@@ -133,13 +149,6 @@ function movePredator() {
     if (predator.x > nearestEgg.x) predator.x -= tileSize;
     if (predator.y < nearestEgg.y) predator.y += tileSize;
     if (predator.y > nearestEgg.y) predator.y -= tileSize;
-
-    for (let i = 0; i < eggs.length; i++) {
-        if (isColliding(predator, eggs[i])) {
-            eggs.splice(i, 1);
-            break;
-        }
-    }
 }
 
 function showWinMessage() {
@@ -164,10 +173,7 @@ function gameLoop() {
     drawGame();
     moveSnake();
     movePredator();
-
-    if (!nestFull) {
-        requestAnimationFrame(gameLoop);
-    }
+    if (!nestFull) requestAnimationFrame(gameLoop);
 }
 
 showInstructions();
