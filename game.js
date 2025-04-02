@@ -20,7 +20,7 @@ const tileSize = 50;
 let snake = [{ x: 100, y: 100 }];
 let snakeDirection = { up: false, down: false, left: false, right: false }; // Key states
 let eggs = [];
-let predator = { x: 0, y: 0 }; // Start predator at top-left corner
+let predator = { x: 0, y: 0 }; // Start predator in the vacant corner
 let nest = { x: canvas.width / 2 - tileSize, y: canvas.height / 2 - tileSize };
 let collectedEggs = 0;
 let gameStarted = false;
@@ -68,7 +68,7 @@ function startGame() {
     gameOver = false;
     collectedEggs = 0;
     snake = [{ x: 100, y: 100 }];
-    predator = { x: 0, y: 0 }; // Start predator at top-left corner
+    predator = { x: canvas.width - tileSize, y: canvas.height - tileSize }; // Predator starts in the bottom-right corner
     snakeDirection = { up: false, down: false, left: false, right: false };
     generateEggs();
     lastMoveTime = performance.now();
@@ -76,16 +76,11 @@ function startGame() {
 }
 
 function generateEggs() {
-    eggs = [];
-    while (eggs.length < 4) {
-        let newEgg = {
-            x: Math.floor(Math.random() * (canvas.width / tileSize)) * tileSize,
-            y: Math.floor(Math.random() * (canvas.height / tileSize)) * tileSize
-        };
-        if (!isColliding(newEgg, nest) && !isColliding(newEgg, predator)) {
-            eggs.push(newEgg);
-        }
-    }
+    eggs = [
+        { x: 0, y: 0 }, // Top-left corner
+        { x: canvas.width - tileSize, y: 0 }, // Top-right corner
+        { x: 0, y: canvas.height - tileSize }, // Bottom-left corner
+    ];
 }
 
 function isColliding(obj1, obj2) {
@@ -123,8 +118,8 @@ function moveSnake() {
         }
     }
 
-    if (collectedEggs === 4 && isColliding(head, nest)) {
-        setTimeout(showWinMessage, 500);
+    if (collectedEggs === 3 && isColliding(head, nest)) {
+        setTimeout(showWinMessage, 500); // Wait for a short time before showing the win message
         return;
     }
 
@@ -162,14 +157,17 @@ function showWinMessage() {
 
 function resetGame() {
     gameStarted = false;
+    gameOver = false;
     showInstructions();
 }
 
 function gameLoop() {
+    if (gameOver) return;
+
     drawGame();
     moveSnake();
     movePredator();
-    if (!gameOver) requestAnimationFrame(gameLoop);
+    requestAnimationFrame(gameLoop);
 }
 
 showInstructions();
