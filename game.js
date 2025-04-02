@@ -18,25 +18,33 @@ images.jungle.src = 'jungle.png'; // Path to the jungle background image
 
 const tileSize = 50;
 let snake = [{ x: 100, y: 100 }];
-let snakeDirection = null; // No auto movement
+let snakeDirection = { up: false, down: false, left: false, right: false }; // Key states
 let eggs = [];
-let predator = { x: 400, y: 300 };
+let predator = { x: 0, y: 0 }; // Start predator at top-left corner
 let nest = { x: canvas.width / 2 - tileSize, y: canvas.height / 2 - tileSize };
 let collectedEggs = 0;
 let gameStarted = false;
 let gameOver = false;
 let moveInterval = 250;
 let lastMoveTime = 0;
-let predatorMoveInterval = 500;
+let predatorMoveInterval = 1000; // Slow down predator by increasing the interval
 let lastPredatorMoveTime = 0;
 
 document.addEventListener('keydown', (event) => {
     if (!gameStarted) return;
     const key = event.key;
-    if (key === 'ArrowUp' && snakeDirection !== 'DOWN') snakeDirection = 'UP';
-    if (key === 'ArrowDown' && snakeDirection !== 'UP') snakeDirection = 'DOWN';
-    if (key === 'ArrowLeft' && snakeDirection !== 'RIGHT') snakeDirection = 'LEFT';
-    if (key === 'ArrowRight' && snakeDirection !== 'LEFT') snakeDirection = 'RIGHT';
+    if (key === 'ArrowUp') snakeDirection.up = true;
+    if (key === 'ArrowDown') snakeDirection.down = true;
+    if (key === 'ArrowLeft') snakeDirection.left = true;
+    if (key === 'ArrowRight') snakeDirection.right = true;
+});
+
+document.addEventListener('keyup', (event) => {
+    const key = event.key;
+    if (key === 'ArrowUp') snakeDirection.up = false;
+    if (key === 'ArrowDown') snakeDirection.down = false;
+    if (key === 'ArrowLeft') snakeDirection.left = false;
+    if (key === 'ArrowRight') snakeDirection.right = false;
 });
 
 function showInstructions() {
@@ -60,8 +68,8 @@ function startGame() {
     gameOver = false;
     collectedEggs = 0;
     snake = [{ x: 100, y: 100 }];
-    predator = { x: 400, y: 300 };
-    snakeDirection = null;
+    predator = { x: 0, y: 0 }; // Start predator at top-left corner
+    snakeDirection = { up: false, down: false, left: false, right: false };
     generateEggs();
     lastMoveTime = performance.now();
     gameLoop();
@@ -98,14 +106,12 @@ function moveSnake() {
     if (now - lastMoveTime < moveInterval) return;
     lastMoveTime = now;
 
-    if (!snakeDirection) return;
-
     let head = { ...snake[0] };
 
-    if (snakeDirection === 'UP') head.y -= tileSize;
-    if (snakeDirection === 'DOWN') head.y += tileSize;
-    if (snakeDirection === 'LEFT') head.x -= tileSize;
-    if (snakeDirection === 'RIGHT') head.x += tileSize;
+    if (snakeDirection.up) head.y -= tileSize;
+    if (snakeDirection.down) head.y += tileSize;
+    if (snakeDirection.left) head.x -= tileSize;
+    if (snakeDirection.right) head.x += tileSize;
 
     snake.unshift(head);
 
