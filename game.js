@@ -16,65 +16,27 @@ images.egg.src = 'egg.png';
 images.nest.src = 'nest.png';
 images.predator.src = 'predator.png';
 images.jungle.src = 'jungle.png';
-images.fullNest.src = 'fullnest.png'; // Final win image
+images.fullNest.src = 'fullnest.png';
 
 const tileSize = 50;
 let snake = [{ x: 150, y: 150 }];
-let snakeDirection = { up: false, down: false, left: false, right: false };
+let snakeDirection = { x: 0, y: 0 };
 let eggs = [];
-let predator = { x: canvas.width - tileSize, y: canvas.height - tileSize };
-let nest = { x: canvas.width / 2 - tileSize, y: canvas.height / 2 - tileSize };
+let predator = { x: 550, y: 550 }; // Start at bottom-right
+let nest = { x: 275, y: 275 };
 let collectedEggs = 0;
 let gameStarted = false;
-let gameOver = false;
-let moveInterval = 200;
+let moveDelay = 200;
 let lastMoveTime = 0;
-let predatorMoveInterval = 800;
+let predatorDelay = 700;
 let lastPredatorMoveTime = 0;
 
-document.addEventListener('keydown', (event) => {
-    if (!gameStarted || gameOver) return;
-    if (event.key === 'ArrowUp' && !snakeDirection.down) snakeDirection = { up: true, down: false, left: false, right: false };
-    if (event.key === 'ArrowDown' && !snakeDirection.up) snakeDirection = { up: false, down: true, left: false, right: false };
-    if (event.key === 'ArrowLeft' && !snakeDirection.right) snakeDirection = { up: false, down: false, left: true, right: false };
-    if (event.key === 'ArrowRight' && !snakeDirection.left) snakeDirection = { up: false, down: false, left: false, right: true };
-});
-
-function showInstructions() {
-    ctx.fillStyle = 'black';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = 'white';
-    ctx.font = '20px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText("Oh no! The mother snake's eggs have fallen apart!", canvas.width / 2, 100);
-    ctx.fillText("Help her pick them up and glue them together!", canvas.width / 2, 140);
-    ctx.fillText("Use the arrow keys to move.", canvas.width / 2, 200);
-    ctx.fillText("Avoid the red predator snake!", canvas.width / 2, 240);
-    ctx.fillText("Collect all eggs and bring them to the nest!", canvas.width / 2, 280);
-    ctx.fillText("Press any key to start!", canvas.width / 2, 320);
-
-    document.addEventListener('keydown', startGame, { once: true });
-}
-
-function startGame() {
-    gameStarted = true;
-    gameOver = false;
-    collectedEggs = 0;
-    snake = [{ x: 150, y: 150 }];
-    predator = { x: canvas.width - tileSize, y: canvas.height - tileSize };
-    snakeDirection = { up: false, down: false, left: false, right: false };
-    generateEggs();
-    lastMoveTime = performance.now();
-    gameLoop();
-}
-
+// Place eggs in 3 corners (except where predator starts)
 function generateEggs() {
-    // Repositioning the eggs to further parts of the canvas
-    const buffer = 120; // Move eggs inward from the edges
     eggs = [
-        { x: buffer, y: buffer },
-        { x: canvas.width - buffer - tileSize, y: buffer },
-        { x: buffer, y: canvas.height - buffer - tileSize }
+        { x: 50, y: 50 },
+        { x: 500, y: 50 },
+        { x: 50, y: 500 }
     ];
 }
 
@@ -88,21 +50,15 @@ function drawGame() {
     ctx.drawImage(images.nest, nest.x, nest.y, tileSize * 2, tileSize * 2);
     snake.forEach(segment => ctx.drawImage(images.snake, segment.x, segment.y, tileSize, tileSize));
     eggs.forEach(egg => ctx.drawImage(images.egg, egg.x, egg.y, tileSize, tileSize));
-    ctx.drawImage(images.predator, predator.x, predator.y, tileSize * 1.5, tileSize * 1.5); // Predator is larger
+    ctx.drawImage(images.predator, predator.x, predator.y, tileSize * 1.5, tileSize * 1.5);
 }
 
 function moveSnake() {
     let now = performance.now();
-    if (now - lastMoveTime < moveInterval) return;
+    if (now - lastMoveTime < moveDelay) return;
     lastMoveTime = now;
 
-    let head = { ...snake[0] };
-
-    if (snakeDirection.up) head.y -= tileSize;
-    if (snakeDirection.down) head.y += tileSize;
-    if (snakeDirection.left) head.x -= tileSize;
-    if (snakeDirection.right) head.x += tileSize;
-
+    let head = { x: snake[0].x + snakeDirection.x, y: snake[0].y + snakeDirection.y };
     snake.unshift(head);
 
     for (let i = 0; i < eggs.length; i++) {
@@ -128,37 +84,70 @@ function moveSnake() {
 
 function movePredator() {
     let now = performance.now();
-    if (now - lastPredatorMoveTime < predatorMoveInterval) return;
+    if (now - lastPredatorMoveTime < predatorDelay) return;
     lastPredatorMoveTime = now;
 
     if (eggs.length === 0) return;
 
-    let target = eggs[0]; 
+    let target = eggs[0];
 
     if (predator.x < target.x) predator.x += tileSize;
-    if (predator.x > target.x) predator.x -= tileSize;
+    else if (predator.x > target.x) predator.x -= tileSize;
+
     if (predator.y < target.y) predator.y += tileSize;
-    if (predator.y > target.y) predator.y -= tileSize;
+    else if (predator.y > target.y) predator.y -= tileSize;
 }
 
 function showWinAnimation() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(images.fullNest, nest.x, nest.y, tileSize * 2, tileSize * 2);
-    setTimeout(resetGame, 1500);
+    setTimeout(resetGame, 2000);
 }
 
 function resetGame() {
     gameStarted = false;
-    gameOver = false;
+    collectedEggs = 0;
+    snake = [{ x: 150, y: 150 }];
+    snakeDirection = { x: 0, y: 0 };
+    predator = { x: 550, y: 550 };
+    generateEggs();
     showInstructions();
 }
 
 function gameLoop() {
-    if (gameOver) return;
     drawGame();
     moveSnake();
     movePredator();
     requestAnimationFrame(gameLoop);
 }
+
+function showInstructions() {
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'white';
+    ctx.font = '20px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText("Oh no! The mother snake's eggs have fallen apart!", canvas.width / 2, 100);
+    ctx.fillText("Help her pick them up and glue them together!", canvas.width / 2, 140);
+    ctx.fillText("Use the arrow keys to move.", canvas.width / 2, 200);
+    ctx.fillText("Avoid the red predator!", canvas.width / 2, 240);
+    ctx.fillText("Press any key to start!", canvas.width / 2, 280);
+
+    document.addEventListener('keydown', startGame, { once: true });
+}
+
+function startGame() {
+    gameStarted = true;
+    generateEggs();
+    gameLoop();
+}
+
+document.addEventListener('keydown', (event) => {
+    if (!gameStarted) return;
+    if (event.key === 'ArrowUp') snakeDirection = { x: 0, y: -tileSize };
+    if (event.key === 'ArrowDown') snakeDirection = { x: 0, y: tileSize };
+    if (event.key === 'ArrowLeft') snakeDirection = { x: -tileSize, y: 0 };
+    if (event.key === 'ArrowRight') snakeDirection = { x: tileSize, y: 0 };
+});
 
 showInstructions();
