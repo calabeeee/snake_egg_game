@@ -1,34 +1,33 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
+// Load images
 const images = {
     snake: new Image(),
     egg: new Image(),
-    nestEmpty: new Image(),
-    nestFull: new Image(),
+    nest: new Image(),
     predator: new Image(),
     jungle: new Image()
 };
 
-images.snake.src = 'snake.png';
-images.egg.src = 'egg.png';
-images.nestEmpty.src = 'nest.png';
-images.nestFull.src = 'nest_full.png';
-images.predator.src = 'predator.png';
-images.jungle.src = 'jungle.png';
+images.snake.src = 'snake.png'; // Path to the snake image
+images.egg.src = 'egg.png'; // Path to the egg image
+images.nest.src = 'nest.png'; // Path to the nest image
+images.predator.src = 'predator.png'; // Path to the predator image
+images.jungle.src = 'jungle.png'; // Path to the jungle background image
 
-const tileSize = 50; // Balanced sprite size
+const tileSize = 50;
 let snake = [{ x: 100, y: 100 }];
-let predator = { x: 400, y: 300 };
-let snakeDirection = null; // FIXED: No automatic movement
+let snakeDirection = null; // No auto movement
 let eggs = [];
+let predator = { x: 400, y: 300 };
 let nest = { x: canvas.width / 2 - tileSize, y: canvas.height / 2 - tileSize };
-let score = 0;
+let collectedEggs = 0;
 let gameStarted = false;
-let nestFull = false;
-let moveInterval = 250; // Balanced movement speed
+let gameOver = false;
+let moveInterval = 250;
 let lastMoveTime = 0;
-let predatorMoveInterval = 450;
+let predatorMoveInterval = 500;
 let lastPredatorMoveTime = 0;
 
 document.addEventListener('keydown', (event) => {
@@ -50,18 +49,19 @@ function showInstructions() {
     ctx.fillText("Help her pick them up and glue them together!", canvas.width / 2, 140);
     ctx.fillText("Use the arrow keys to move.", canvas.width / 2, 200);
     ctx.fillText("Avoid the red predator snake!", canvas.width / 2, 240);
-    ctx.fillText("Press any key to start!", canvas.width / 2, 300);
+    ctx.fillText("Collect all eggs and bring them to the nest!", canvas.width / 2, 280);
+    ctx.fillText("Press any key to start!", canvas.width / 2, 320);
 
     document.addEventListener('keydown', startGame, { once: true });
 }
 
 function startGame() {
     gameStarted = true;
-    nestFull = false;
+    gameOver = false;
+    collectedEggs = 0;
     snake = [{ x: 100, y: 100 }];
     predator = { x: 400, y: 300 };
-    score = 0;
-    snakeDirection = null; // FIX: No auto movement
+    snakeDirection = null;
     generateEggs();
     lastMoveTime = performance.now();
     gameLoop();
@@ -86,11 +86,11 @@ function isColliding(obj1, obj2) {
 
 function drawGame() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(images.jungle, 0, 0, canvas.width, canvas.height);
-    ctx.drawImage(nestFull ? images.nestFull : images.nestEmpty, nest.x, nest.y, tileSize * 2, tileSize * 2);
-    snake.forEach(segment => ctx.drawImage(images.snake, segment.x, segment.y, tileSize, tileSize));
-    eggs.forEach(egg => ctx.drawImage(images.egg, egg.x, egg.y, tileSize, tileSize));
-    ctx.drawImage(images.predator, predator.x, predator.y, tileSize, tileSize);
+    ctx.drawImage(images.jungle, 0, 0, canvas.width, canvas.height); // Background
+    ctx.drawImage(images.nest, nest.x, nest.y, tileSize * 2, tileSize * 2); // Nest
+    snake.forEach(segment => ctx.drawImage(images.snake, segment.x, segment.y, tileSize, tileSize)); // Snake
+    eggs.forEach(egg => ctx.drawImage(images.egg, egg.x, egg.y, tileSize, tileSize)); // Eggs
+    ctx.drawImage(images.predator, predator.x, predator.y, tileSize, tileSize); // Predator
 }
 
 function moveSnake() {
@@ -98,7 +98,7 @@ function moveSnake() {
     if (now - lastMoveTime < moveInterval) return;
     lastMoveTime = now;
 
-    if (!snakeDirection) return; // FIX: No movement until key pressed
+    if (!snakeDirection) return;
 
     let head = { ...snake[0] };
 
@@ -111,20 +111,18 @@ function moveSnake() {
 
     for (let i = 0; i < eggs.length; i++) {
         if (isColliding(head, eggs[i])) {
-            score++;
+            collectedEggs++;
             eggs.splice(i, 1);
             break;
         }
     }
 
-    if (eggs.length === 0 && !nestFull) {
-        setTimeout(() => {
-            nestFull = true;
-            showWinMessage();
-        }, 500);
-    } else {
-        snake.pop();
+    if (collectedEggs === 4 && isColliding(head, nest)) {
+        setTimeout(showWinMessage, 500);
+        return;
     }
+
+    snake.pop();
 
     if (isColliding(head, predator)) {
         alert('Game Over! The predator caught you!');
@@ -152,20 +150,12 @@ function movePredator() {
 }
 
 function showWinMessage() {
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = 'white';
-    ctx.font = '24px Arial';
-    ctx.fillText("You saved all the eggs!", canvas.width / 2, 180);
-    ctx.fillText("The mother snake is happy!", canvas.width / 2, 220);
-    ctx.fillText("Press any key to restart.", canvas.width / 2, 260);
-
-    document.addEventListener('keydown', resetGame, { once: true });
+    alert("You win! The eggs are safely in the nest!");
+    resetGame();
 }
 
 function resetGame() {
     gameStarted = false;
-    nestFull = false;
     showInstructions();
 }
 
@@ -173,7 +163,7 @@ function gameLoop() {
     drawGame();
     moveSnake();
     movePredator();
-    if (!nestFull) requestAnimationFrame(gameLoop);
+    if (!gameOver) requestAnimationFrame(gameLoop);
 }
 
 showInstructions();
