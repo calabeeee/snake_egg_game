@@ -73,7 +73,7 @@ function generateEggs() {
     eggs = [
         { x: buffer, y: buffer },
         { x: canvas.width - buffer - tileSize, y: buffer },
-        { x: buffer, y: canvas.height - buffer - tileSize }
+        { x: canvas.width - buffer - tileSize, y: canvas.height - buffer - tileSize }
     ];
 }
 
