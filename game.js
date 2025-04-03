@@ -7,8 +7,7 @@ const images = {
     egg: new Image(),
     nest: new Image(),
     predator: new Image(),
-    jungle: new Image(),
-    fullNest: new Image()
+    jungle: new Image()
 };
 
 images.snake.src = 'snake.png';
@@ -16,7 +15,6 @@ images.egg.src = 'egg.png';
 images.nest.src = 'nest.png';
 images.predator.src = 'predator.png';
 images.jungle.src = 'jungle.png';
-images.fullNest.src = 'fullnest.png';
 
 const tileSize = 50;
 let snake = [{ x: 150, y: 150 }];
@@ -75,7 +73,8 @@ function moveSnake() {
 
     // Check if the snake wins
     if (collectedEggs === 3 && isColliding(head, nest)) {
-        showWinAnimation();
+        alert("You win! You collected all the eggs and reached the nest!");
+        resetGame();
         return;
     }
 
@@ -104,13 +103,6 @@ function movePredator() {
 
     if (predator.y < target.y) predator.y += tileSize;
     else if (predator.y > target.y) predator.y -= tileSize;
-}
-
-function showWinAnimation() {
-    gameOver = true;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(images.fullNest, nest.x, nest.y, tileSize * 2, tileSize * 2);
-    setTimeout(resetGame, 2000);
 }
 
 function resetGame() {
