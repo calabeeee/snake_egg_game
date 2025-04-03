@@ -7,7 +7,8 @@ const images = {
     egg: new Image(),
     nest: new Image(),
     predator: new Image(),
-    jungle: new Image()
+    jungle: new Image(),
+    fullNest: new Image()
 };
 
 images.snake.src = 'snake.png';
@@ -15,6 +16,7 @@ images.egg.src = 'egg.png';
 images.nest.src = 'nest.png';
 images.predator.src = 'predator.png';
 images.jungle.src = 'jungle.png';
+images.fullNest.src = 'fullnest.png';
 
 const tileSize = 50;
 let snake = [{ x: 150, y: 150 }];
@@ -29,6 +31,7 @@ let moveDelay = 200;
 let lastMoveTime = 0;
 let predatorDelay = 700;
 let lastPredatorMoveTime = 0;
+let gameWon = false;
 
 // Place eggs in 3 corners
 function generateEggs() {
@@ -46,6 +49,16 @@ function isColliding(obj1, obj2) {
 function drawGame() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(images.jungle, 0, 0, canvas.width, canvas.height);
+    
+    if (gameWon) {
+        ctx.drawImage(images.fullNest, nest.x, nest.y, tileSize * 2, tileSize * 2);
+        ctx.fillStyle = 'white';
+        ctx.font = '30px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText("You win! The eggs are safe!", canvas.width / 2, 100);
+        return;
+    }
+
     ctx.drawImage(images.nest, nest.x, nest.y, tileSize * 2, tileSize * 2);
     snake.forEach(segment => ctx.drawImage(images.snake, segment.x, segment.y, tileSize, tileSize));
     eggs.forEach(egg => ctx.drawImage(images.egg, egg.x, egg.y, tileSize, tileSize));
@@ -53,7 +66,7 @@ function drawGame() {
 }
 
 function moveSnake() {
-    if (gameOver) return;
+    if (gameOver || gameWon) return;
 
     let now = performance.now();
     if (now - lastMoveTime < moveDelay) return;
@@ -73,8 +86,8 @@ function moveSnake() {
 
     // Check if the snake wins
     if (collectedEggs === 3 && isColliding(head, nest)) {
-        alert("You win! You collected all the eggs and reached the nest!");
-        resetGame();
+        gameWon = true;
+        setTimeout(resetGame, 3000); // Show the full nest for 3 seconds, then restart
         return;
     }
 
@@ -88,7 +101,7 @@ function moveSnake() {
 }
 
 function movePredator() {
-    if (gameOver) return;
+    if (gameOver || gameWon) return;
 
     let now = performance.now();
     if (now - lastPredatorMoveTime < predatorDelay) return;
@@ -108,6 +121,7 @@ function movePredator() {
 function resetGame() {
     gameStarted = false;
     gameOver = false;
+    gameWon = false;
     collectedEggs = 0;
     snake = [{ x: 150, y: 150 }];
     snakeDirection = { x: 0, y: 0 };
@@ -117,7 +131,7 @@ function resetGame() {
 }
 
 function gameLoop() {
-    if (!gameOver) {
+    if (!gameOver && !gameWon) {
         drawGame();
         moveSnake();
         movePredator();
@@ -148,7 +162,7 @@ function startGame() {
 }
 
 document.addEventListener('keydown', (event) => {
-    if (!gameStarted || gameOver) return;
+    if (!gameStarted || gameOver || gameWon) return;
     if (event.key === 'ArrowUp') snakeDirection = { x: 0, y: -tileSize };
     if (event.key === 'ArrowDown') snakeDirection = { x: 0, y: tileSize };
     if (event.key === 'ArrowLeft') snakeDirection = { x: -tileSize, y: 0 };
